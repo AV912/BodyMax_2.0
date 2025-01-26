@@ -3,7 +3,16 @@ import SwiftUI
 
 class OnboardingViewModel: ObservableObject {
     @Published var currentStep = 0
-    @Published var userProfile = UserProfile()
+    @Published var userProfile: UserProfile
+    
+    init() {
+        // Try to load existing profile, or create new one
+        if let existingProfile = CoreDataManager.shared.fetchUserProfile() {
+            self.userProfile = existingProfile
+        } else {
+            self.userProfile = UserProfile()
+        }
+    }
     
     enum OnboardingStep: Int, CaseIterable {
         case welcome
@@ -12,9 +21,8 @@ class OnboardingViewModel: ObservableObject {
         case age
         case weight
         case height
-        case goals
+        case goal
         case notifications
-        case referral
         case rating
         
         var title: String {
@@ -25,9 +33,8 @@ class OnboardingViewModel: ObservableObject {
             case .age: return "How old are you?"
             case .weight: return "What's your weight?"
             case .height: return "What's your height?"
-            case .goals: return "What's your goal?"
+            case .goal: return "What's your goal?"
             case .notifications: return "Stay Updated"
-            case .referral: return "Got a Referral?"
             case .rating: return "Rate Your Experience"
             }
         }
@@ -38,8 +45,6 @@ class OnboardingViewModel: ObservableObject {
                 return "This helps us create your personalized plan"
             case .notifications:
                 return "Get reminders and updates about your progress"
-            case .referral:
-                return "Enter your referral code if you have one"
             default:
                 return nil
             }
@@ -54,6 +59,10 @@ class OnboardingViewModel: ObservableObject {
         switch currentStepType {
         case .name:
             return !userProfile.name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        case .goal:
+            return true
+        case .rating:
+            return userProfile.hasCompletedRating
         default:
             return true
         }
@@ -76,8 +85,10 @@ class OnboardingViewModel: ObservableObject {
     }
     
     func completeOnboarding() {
-        // Save profile and mark onboarding as complete
-        UserDefaults.standard.userProfile = userProfile
-        UserDefaults.standard.hasCompletedOnboarding = true
+        // Save profile to CoreData
+        CoreDataManager.shared.saveUserProfile(userProfile)
+        
+        // Set onboarding as completed in UserDefaults
+        UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
     }
 }

@@ -1,14 +1,9 @@
 import SwiftUI
+import CoreData
 
 struct ProfileView: View {
-    @AppStorage("userProfile") private var profileData: Data?
-    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = true
+    @State private var userProfile: UserProfile?
     @State private var showingEditProfile = false
-    
-    private var profile: UserProfile? {
-        guard let data = profileData else { return nil }
-        return try? JSONDecoder().decode(UserProfile.self, from: data)
-    }
     
     var body: some View {
         NavigationView {
@@ -16,99 +11,118 @@ struct ProfileView: View {
                 Theme.background.ignoresSafeArea()
                 
                 ScrollView {
-                    VStack(spacing: 20) {
-                        // Profile Header
-                        ProfileHeader(profile: profile)
+                    VStack(spacing: 24) {
+                        // Header with greeting
+                        if let profile = userProfile {
+                            VStack(spacing: 16) {
+                                Text("Hi \(profile.name)!")
+                                    .font(.system(size: 28, weight: .bold))
+                                    .foregroundColor(Theme.textPrimary)
+                                
+                                Text("Let's \(profile.goal.rawValue.lowercased())")
+                                    .font(.headline)
+                                    .foregroundColor(Theme.textSecondary)
+                            }
+                            .padding(.top, 20)
+                        }
                         
-                        // Menu Items
-                        VStack(spacing: 1) {
-                            MenuButton(title: "Edit Profile", icon: "person.fill") {
-                                showingEditProfile = true
+                        // Stats Section
+                        VStack(spacing: 16) {
+                            HStack(spacing: 16) {
+                                StatCard(title: "Weight", value: "\(Int(userProfile?.weight ?? 0)) \(userProfile?.measurementPreference == .metric ? "kg" : "lbs")")
+                                StatCard(title: "Height", value: "\(Int(userProfile?.height ?? 0)) \(userProfile?.measurementPreference == .metric ? "cm" : "in")")
                             }
                             
-                            MenuButton(title: "Privacy Policy", icon: "lock.fill") {
-                                // TODO: Show privacy policy
-                            }
-                            
-                            MenuButton(title: "Settings", icon: "gear") {
-                                // TODO: Show settings
-                            }
-                            
-                            MenuButton(title: "Sign Out", icon: "arrow.right.square", textColor: .red) {
-                                signOut()
+                            HStack(spacing: 16) {
+                                StatCard(title: "Age", value: "\(userProfile?.age ?? 0)")
+                                StatCard(title: "Goal", value: userProfile?.goal.rawValue ?? "-")
                             }
                         }
-                        .background(Theme.secondaryBackground)
-                        .cornerRadius(12)
+                        .padding(.horizontal)
+                        
+                        // Settings Section
+                        VStack(spacing: 8) {
+                            Button(action: { showingEditProfile = true }) {
+                                SettingsRow(icon: "person.fill", title: "Edit Profile")
+                            }
+                            
+                            SettingsRow(icon: "bell.fill", title: "Notifications", showToggle: true, isOn: .constant(userProfile?.notificationsEnabled ?? false))
+                            
+                            SettingsRow(icon: "ruler", title: "Measurement", value: userProfile?.measurementPreference.rawValue.capitalized ?? "-")
+                        }
+                        .padding(.horizontal)
+                        
+                        Spacer()
                     }
-                    .padding()
                 }
             }
-            .navigationTitle("Profile")
-            .navigationBarTitleDisplayMode(.inline)
+            .navigationBarHidden(true)
+            .sheet(isPresented: $showingEditProfile) {
+                EditProfileView(userProfile: userProfile)
+            }
         }
-    }
-    
-    private func signOut() {
-        // Clear user data
-        UserDefaults.standard.removeObject(forKey: "userProfile")
-        hasCompletedOnboarding = false
+        .onAppear {
+            userProfile = CoreDataManager.shared.fetchUserProfile()
+        }
     }
 }
 
-struct ProfileHeader: View {
-    let profile: UserProfile?
+struct StatCard: View {
+    let title: String
+    let value: String
     
     var body: some View {
-        VStack(spacing: 16) {
-            Circle()
-                .fill(Theme.secondaryBackground)
-                .frame(width: 100, height: 100)
-                .overlay(
-                    Image(systemName: "person.fill")
-                        .font(.system(size: 40))
-                        .foregroundColor(Theme.textSecondary)
-                )
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.subheadline)
+                .foregroundColor(Theme.textSecondary)
             
-            if let profile = profile {
-                Text(profile.name)
-                    .font(.title2)
-                    .bold()
-                    .foregroundColor(Theme.textPrimary)
-                
-                Text("Member since Jan 2024")
-                    .font(.subheadline)
-                    .foregroundColor(Theme.textSecondary)
-            }
+            Text(value)
+                .font(.headline)
+                .foregroundColor(Theme.textPrimary)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .frame(maxWidth: .infinity)
         .background(Theme.secondaryBackground)
         .cornerRadius(12)
     }
 }
 
-struct MenuButton: View {
-    let title: String
+struct SettingsRow: View {
     let icon: String
-    var textColor: Color = Theme.textPrimary
-    let action: () -> Void
+    let title: String
+    var value: String? = nil
+    var showToggle: Bool = false
+    var isOn: Binding<Bool>? = nil
     
     var body: some View {
-        Button(action: action) {
-            HStack {
-                Image(systemName: icon)
-                    .frame(width: 24)
-                Text(title)
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.footnote)
+        HStack {
+            Image(systemName: icon)
+                .foregroundColor(Theme.accent)
+                .frame(width: 24, height: 24)
+            
+            Text(title)
+                .foregroundColor(Theme.textPrimary)
+            
+            Spacer()
+            
+            if let value = value {
+                Text(value)
                     .foregroundColor(Theme.textSecondary)
             }
-            .foregroundColor(textColor)
-            .padding()
-            .background(Theme.secondaryBackground)
+            
+            if showToggle, let isOn = isOn {
+                Toggle("", isOn: isOn)
+            }
+            
+            if !showToggle && value == nil {
+                Image(systemName: "chevron.right")
+                    .foregroundColor(Theme.textSecondary)
+            }
         }
+        .padding()
+        .background(Theme.secondaryBackground)
+        .cornerRadius(12)
     }
 }
 

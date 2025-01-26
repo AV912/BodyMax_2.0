@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="22522" systemVersion="23C71" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="YES" userDefinedModelVersionIdentifier="">
+    <entity name="CDAnalysis" representedClassName="CDAnalysis" syncable="YES" codeGenerationType="class">
+        <attribute name="bodyPartBreakdownData" optional="YES" attributeType="Binary"/>
+        <attribute name="dateGenerated" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="dreamPhysiqueData" optional="YES" attributeType="Binary"/>
+        <attribute name="nutritionPlanData" optional="YES" attributeType="Binary"/>
+        <attribute name="progressScore" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="transformationProjectionData" optional="YES" attributeType="Binary"/>
+        <attribute name="workoutRoutineData" optional="YES" attributeType="Binary"/>
+    </entity>
+    <entity name="CDDreamPhysique" representedClassName="CDDreamPhysique" syncable="YES" codeGenerationType="class">
+        <attribute name="imageData" optional="YES" attributeType="Binary"/>
+        <attribute name="uploadDate" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+    </entity>
+    <entity name="CDUserProfile" representedClassName="CDUserProfile" syncable="YES" codeGenerationType="class">
+        <attribute name="age" optional="YES" attributeType="Integer 16" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="goal" optional="YES" attributeType="String"/>
+        <attribute name="hasCompletedOnboarding" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="height" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="measurementPreference" optional="YES" attributeType="String"/>
+        <attribute name="name" optional="YES" attributeType="String"/>
+        <attribute name="notificationsEnabled" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="referralCode" optional="YES" attributeType="String"/>
+        <attribute name="weight" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+    </entity>
+</model>

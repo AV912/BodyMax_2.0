@@ -72,6 +72,6 @@ struct GoalCard: View {
 #Preview {
     ZStack {
         Theme.background.ignoresSafeArea()
-        GoalSelectionView(selectedGoal: .constant(.gainWeight))
+        GoalSelectionView(selectedGoal: .constant(.loseWeight))
     }
 }

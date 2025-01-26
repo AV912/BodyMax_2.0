@@ -3,7 +3,13 @@ import PhotosUI
 
 struct AnalysisView: View {
     @StateObject private var viewModel = AnalysisViewModel()
-    @StateObject private var photoCaptureViewModel = PhotoCaptureViewModel()
+    @StateObject private var photoCaptureViewModel: PhotoCaptureViewModel
+    
+    init() {
+        let analysisVM = AnalysisViewModel()
+        _viewModel = StateObject(wrappedValue: analysisVM)
+        _photoCaptureViewModel = StateObject(wrappedValue: PhotoCaptureViewModel(analysisViewModel: analysisVM))
+    }
     
     var body: some View {
         NavigationView {
@@ -12,7 +18,6 @@ struct AnalysisView: View {
                 
                 ScrollView {
                     VStack(spacing: 20) {
-                        // Dream Physique Card
                         DreamPhysiqueCard(
                             dreamPhysique: viewModel.dreamPhysique,
                             onAdd: { viewModel.showingPhotoPicker = true },
@@ -20,10 +25,9 @@ struct AnalysisView: View {
                             onDelete: { viewModel.clearDreamPhysique() }
                         )
                         
-                        // New Analysis Button
                         Button {
                             photoCaptureViewModel.clearAllPhotos()
-                            viewModel.showingBodyPhotoCapture = true
+                            viewModel.startNewAnalysis()
                         } label: {
                             HStack {
                                 Image(systemName: "camera.fill")
@@ -38,16 +42,24 @@ struct AnalysisView: View {
                         }
                         .disabled(viewModel.dreamPhysique == nil)
                         
-                        // Previous Analyses
                         VStack(alignment: .leading, spacing: 12) {
                             Text("Previous Analyses")
                                 .font(.headline)
                                 .foregroundColor(Theme.textPrimary)
                             
-                            if true {
+                            if viewModel.analyses.isEmpty {
                                 Text("No analyses yet")
                                     .font(.subheadline)
                                     .foregroundColor(Theme.textSecondary)
+                            } else {
+                                ForEach(viewModel.analyses, id: \.dateGenerated) { analysis in
+                                    Button {
+                                        viewModel.selectedAnalysis = analysis
+                                        viewModel.showingAnalysisResult = true
+                                    } label: {
+                                        AnalysisHistoryRow(analysis: analysis)
+                                    }
+                                }
                             }
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -57,81 +69,24 @@ struct AnalysisView: View {
             }
             .navigationTitle("Analysis")
             .navigationBarTitleDisplayMode(.inline)
-            .sheet(isPresented: $viewModel.showingPhotoPicker) {
-                ImagePicker(selectedImage: Binding(
-                    get: { viewModel.dreamPhysique },
-                    set: { if let image = $0 { viewModel.saveDreamPhysique(image) } }
-                ))
-                .preferredColorScheme(.dark)
-            }
-            .sheet(isPresented: $viewModel.showingBodyPhotoCapture) {
-                RequiredPhotosView(viewModel: photoCaptureViewModel)
+        }
+        .sheet(isPresented: $viewModel.showingPhotoPicker) {
+            ImagePicker(selectedImage: Binding(
+                get: { viewModel.dreamPhysique },
+                set: { if let image = $0 { viewModel.saveDreamPhysique(image) } }
+            ))
+            .preferredColorScheme(.dark)
+        }
+        .fullScreenCover(isPresented: $viewModel.showingBodyPhotoCapture) {
+            PhotoSelectionView(viewModel: photoCaptureViewModel)
+        }
+        .fullScreenCover(isPresented: $viewModel.showingLoadingView) {
+            LoadingView()
+        }
+        .sheet(isPresented: $viewModel.showingAnalysisResult) {
+            if let analysis = viewModel.selectedAnalysis {
+                AnalysisResultView(analysis: analysis)
             }
         }
     }
-}
-
-struct DreamPhysiqueCard: View {
-    let dreamPhysique: UIImage?
-    let onAdd: () -> Void
-    let onEdit: () -> Void
-    let onDelete: () -> Void
-    
-    var body: some View {
-        VStack(spacing: 12) {
-            HStack {
-                Text("Dream Physique")
-                    .font(.headline)
-                    .foregroundColor(Theme.textPrimary)
-                Spacer()
-                if dreamPhysique != nil {
-                    Menu {
-                        Button(action: onEdit) {
-                            Label("Change Photo", systemImage: "photo")
-                        }
-                        Button(role: .destructive, action: onDelete) {
-                            Label("Remove Photo", systemImage: "trash")
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis")
-                            .foregroundColor(Theme.textSecondary)
-                            .padding(8)
-                    }
-                }
-            }
-            
-            if let image = dreamPhysique {
-                Image(uiImage: image)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 200)
-                    .cornerRadius(12)
-                    .clipped()
-            } else {
-                Button(action: onAdd) {
-                    VStack(spacing: 12) {
-                        Image(systemName: "photo.fill")
-                            .font(.system(size: 40))
-                        Text("Upload Dream Physique")
-                            .font(.subheadline)
-                    }
-                    .foregroundColor(Theme.textSecondary)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 200)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .stroke(Theme.textSecondary.opacity(0.5), style: StrokeStyle(lineWidth: 2, dash: [5]))
-                    )
-                }
-            }
-        }
-        .padding()
-        .frame(maxWidth: .infinity)
-        .background(Theme.secondaryBackground)
-        .cornerRadius(12)
-    }
-}
-
-#Preview {
-    AnalysisView()
 }

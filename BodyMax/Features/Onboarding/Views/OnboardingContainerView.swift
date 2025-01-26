@@ -2,51 +2,58 @@ import SwiftUI
 
 struct OnboardingContainerView: View {
     @StateObject private var viewModel = OnboardingViewModel()
+    @Binding var hasCompletedOnboarding: Bool
     
     var body: some View {
         ZStack {
             Theme.background.ignoresSafeArea()
             
             VStack {
-                // Current view
-                Group {
-                    switch viewModel.currentStepType {
-                    case .welcome:
-                        WelcomeView()
-                    case .name:
-                        NameInputView(name: $viewModel.userProfile.name)
-                    case .measurementPreference:
-                        MeasurementPreferenceView(preference: $viewModel.userProfile.measurementPreference)
-                    case .age:
-                        AgeInputView(age: $viewModel.userProfile.age)
-                    case .weight:
-                        WeightInputView(
-                            weight: $viewModel.userProfile.weight,
-                            preference: viewModel.userProfile.measurementPreference
-                        )
-                    case .height:
-                        HeightInputView(
-                            height: $viewModel.userProfile.height,
-                            preference: viewModel.userProfile.measurementPreference
-                        )
-                    case .goals:
-                        GoalSelectionView(selectedGoal: $viewModel.userProfile.goal)
-                    case .notifications:
-                        NotificationsView(notificationsEnabled: $viewModel.userProfile.notificationsEnabled)
-                    case .referral:
-                        ReferralView(code: $viewModel.userProfile.referralCode)
-                    case .rating:
-                        RatingView(hasCompleted: $viewModel.userProfile.hasCompletedRating)
-                    }
+                TabView(selection: $viewModel.currentStep) {
+                    WelcomeView()
+                        .tag(0)
+                    
+                    NameInputView(name: $viewModel.userProfile.name)
+                        .tag(1)
+                    
+                    MeasurementPreferenceView(preference: $viewModel.userProfile.measurementPreference)
+                        .tag(2)
+                    
+                    AgeInputView(age: $viewModel.userProfile.age)
+                        .tag(3)
+                    
+                    WeightInputView(
+                        weight: $viewModel.userProfile.weight,
+                        preference: viewModel.userProfile.measurementPreference
+                    )
+                    .tag(4)
+                    
+                    HeightInputView(
+                        height: $viewModel.userProfile.height,
+                        preference: viewModel.userProfile.measurementPreference
+                    )
+                    .tag(5)
+                    
+                    GoalSelectionView(selectedGoal: $viewModel.userProfile.goal)
+                        .tag(6)
+                    
+                    NotificationsView(notificationsEnabled: $viewModel.userProfile.notificationsEnabled)
+                        .tag(7)
+                    
+                    RatingView(hasCompleted: $viewModel.userProfile.hasCompletedRating)
+                        .tag(8)
                 }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+                .animation(.easeInOut, value: viewModel.currentStep)
+                .scrollDisabled(true)  // Disable TabView scrolling
                 
                 Spacer()
                 
-                // Navigation buttons
                 VStack(spacing: 12) {
                     Button(action: {
                         if viewModel.currentStep == OnboardingViewModel.OnboardingStep.allCases.count - 1 {
                             viewModel.completeOnboarding()
+                            hasCompletedOnboarding = true
                         } else {
                             viewModel.nextStep()
                         }
@@ -61,23 +68,21 @@ struct OnboardingContainerView: View {
                     }
                     .disabled(!viewModel.canProceed)
                     
-                    if viewModel.currentStep > 0 && viewModel.currentStep < OnboardingViewModel.OnboardingStep.allCases.count - 1 {
-                        Button(action: {
-                            viewModel.previousStep()
-                        }) {
+                    if viewModel.currentStep > 0 {
+                        Button(action: viewModel.previousStep) {
                             Text("Back")
                                 .font(.headline)
-                                .foregroundColor(Theme.accent)
+                                .foregroundColor(Theme.textSecondary)
                         }
                     }
                 }
                 .padding(.horizontal)
-                .padding(.bottom)
+                .padding(.bottom, 34)
             }
         }
     }
 }
 
 #Preview {
-    OnboardingContainerView()
+    ContentView()
 }

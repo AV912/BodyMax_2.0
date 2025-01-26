@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct WelcomeView: View {
+    init() {}
+    
     var body: some View {
         VStack(spacing: 24) {
             Spacer()
@@ -27,9 +29,11 @@ struct WelcomeView: View {
     }
 }
 
-#Preview {
-    ZStack {
-        Theme.background.ignoresSafeArea()
-        WelcomeView()
+struct WelcomeView_Previews: PreviewProvider {
+    static var previews: some View {
+        ZStack {
+            Theme.background.ignoresSafeArea()
+            WelcomeView()
+        }
     }
 }

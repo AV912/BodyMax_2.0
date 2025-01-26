@@ -3,6 +3,7 @@ options:
   bundleIdPrefix: com.moundai
   deploymentTarget:
     iOS: 16.0
+  xcodeVersion: "15.0"
 
 settings:
   base:
@@ -10,6 +11,7 @@ settings:
     CURRENT_PROJECT_VERSION: 1
     CODE_SIGN_STYLE: Automatic
     CODE_SIGN_IDENTITY: "Apple Development"
+    GENERATE_INFOPLIST_FILE: YES
 
 targets:
   BodyMax:
@@ -21,15 +23,22 @@ targets:
       base:
         INFOPLIST_FILE: BodyMax/Info.plist
         PRODUCT_BUNDLE_IDENTIFIER: com.moundai.bodymax
-        DEVELOPMENT_TEAM: GN2N584376  # Leave this empty for automatic team selection
+        DEVELOPMENT_TEAM: GN2N584376
     info:
       path: BodyMax/Info.plist
       properties:
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         UILaunchStoryboardName: LaunchScreen
-        NSCameraUsageDescription: We need camera access to take your progress photos for analysis
-        NSPhotoLibraryUsageDescription: We need access to your photos to select progress photos for analysis
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+          UISceneConfigurations:
+            UIWindowSceneSessionRoleApplication:
+              - UISceneConfigurationName: Default Configuration
+                UISceneDelegateClassName: $(PRODUCT_MODULE_NAME).SceneDelegate
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         LSRequiresIPhoneOS: true
+        NSCameraUsageDescription: "BodyMax needs access to your camera to take photos for body analysis and progress tracking."
+        NSPhotoLibraryUsageDescription: "BodyMax needs access to your photo library to save your progress photos."
+        NSPhotoLibraryAddUsageDescription: "BodyMax needs permission to save your progress photos to your photo library."

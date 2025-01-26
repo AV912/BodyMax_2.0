@@ -23,58 +23,44 @@ struct HeightInputView: View {
                 .frame(height: 20)
             
             if preference == .metric {
-                // Metric height picker
-                VStack(spacing: 8) {
-                    StyledPickerView(
-                        selection: Binding(
-                            get: { Int(round(height)) },
-                            set: { height = Double($0) }
-                        ),
-                        range: 120...220
-                    )
-                    .frame(height: 150)
-                    
-                    Text("cm")
-                        .font(.headline)
-                        .foregroundColor(Theme.textSecondary)
-                }
+                StyledPickerView(
+                    selection: Binding(
+                        get: { Int(round(height)) },
+                        set: { height = Double($0) }
+                    ),
+                    range: 120...220
+                )
+                .frame(height: 150)
+                
+                Text("cm")
+                    .font(.headline)
+                    .foregroundColor(Theme.textSecondary)
             } else {
-                // Imperial height picker (feet and inches)
-                VStack(spacing: 24) {
-                    VStack(spacing: 8) {
+                VStack(spacing: 20) {  
+                    // Feet Picker
+                    VStack {
+                        Text("Feet")
+                            .font(.headline)
+                            .foregroundColor(Theme.textSecondary)
+                        
                         StyledPickerView(
-                            selection: Binding(
-                                get: { feet },
-                                set: {
-                                    feet = $0
-                                    updateHeightFromImperial()
-                                }
-                            ),
+                            selection: $feet,
                             range: 4...7
                         )
                         .frame(height: 150)
-                        
-                        Text("feet")
-                            .font(.headline)
-                            .foregroundColor(Theme.textSecondary)
                     }
                     
-                    VStack(spacing: 8) {
+                    // Inches Picker
+                    VStack {
+                        Text("Inches")
+                            .font(.headline)
+                            .foregroundColor(Theme.textSecondary)
+                        
                         StyledPickerView(
-                            selection: Binding(
-                                get: { inches },
-                                set: {
-                                    inches = $0
-                                    updateHeightFromImperial()
-                                }
-                            ),
+                            selection: $inches,
                             range: 0...11
                         )
                         .frame(height: 150)
-                        
-                        Text("inches")
-                            .font(.headline)
-                            .foregroundColor(Theme.textSecondary)
                     }
                 }
             }
@@ -89,6 +75,8 @@ struct HeightInputView: View {
                 inches = Int(totalInches) % 12
             }
         }
+        .onChange(of: feet) { _ in updateHeightFromImperial() }
+        .onChange(of: inches) { _ in updateHeightFromImperial() }
     }
     
     private func updateHeightFromImperial() {

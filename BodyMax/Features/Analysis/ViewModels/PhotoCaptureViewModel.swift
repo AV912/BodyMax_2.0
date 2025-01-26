@@ -5,8 +5,13 @@ class PhotoCaptureViewModel: ObservableObject {
     @Published var capturedPhotos: [PhotoType: UIImage] = [:]
     @Published var showingPhotoCapture = false
     @Published var showingPhotoPicker = false
-    @Published var showingReview = false
-    @Published var showPhotoGuide = true
+    @Published var showingAnalysisResult = false
+    
+    var analysisViewModel: AnalysisViewModel
+    
+    init(analysisViewModel: AnalysisViewModel) {
+        self.analysisViewModel = analysisViewModel
+    }
     
     var allPhotosComplete: Bool {
         PhotoType.allCases.allSatisfy { capturedPhotos[$0] != nil }
@@ -14,35 +19,28 @@ class PhotoCaptureViewModel: ObservableObject {
     
     func savePhoto(_ image: UIImage, for type: PhotoType) {
         capturedPhotos[type] = image
-    }
-    
-    func clearPhoto(for type: PhotoType) {
-        capturedPhotos.removeValue(forKey: type)
+        
+        showingPhotoCapture = false
+        showingPhotoPicker = false
     }
     
     func moveToNextPhoto() {
         let types = PhotoType.allCases
-        if let currentIndex = types.firstIndex(of: currentPhotoType),
-           currentIndex < types.count - 1 {
-            currentPhotoType = types[currentIndex + 1]
-            showPhotoGuide = true
-        }
-    }
-    
-    func moveToPreviousPhoto() {
-        let types = PhotoType.allCases
-        if let currentIndex = types.firstIndex(of: currentPhotoType),
-           currentIndex > 0 {
-            currentPhotoType = types[currentIndex - 1]
-            showPhotoGuide = true
+        guard let currentIndex = types.firstIndex(of: currentPhotoType) else { return }
+        
+        let nextIndex = currentIndex + 1
+        if nextIndex < types.count {
+            currentPhotoType = types[nextIndex]
         }
     }
     
     func startAnalysis() {
-        // TODO: Implement analysis
+        print("Starting analysis with photos: \(capturedPhotos)")
+        analysisViewModel.performAnalysis(with: capturedPhotos)
     }
     
     func clearAllPhotos() {
         capturedPhotos.removeAll()
+        currentPhotoType = .front
     }
 }

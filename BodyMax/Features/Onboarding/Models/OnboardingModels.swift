@@ -6,9 +6,9 @@ enum MeasurementPreference: String, Codable, CaseIterable {
 }
 
 enum FitnessGoal: String, Codable, CaseIterable {
-    case gainWeight = "Gain Weight"
     case loseWeight = "Lose Weight"
-    case maintainWeight = "Maintain Weight"
+    case gainMuscle = "Gain Muscle"
+    case maintainWeight = "Maintain Physique"
 }
 
 struct UserProfile: Codable {

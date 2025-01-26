@@ -19,8 +19,55 @@ struct NumberPickerView: View {
                     .foregroundColor(Theme.textSecondary)
             }
             
-            StyledPickerView(selection: $selectedNumber, range: range)
-                .frame(height: 150)
+            ScrollViewReader { proxy in
+                ScrollView(.vertical, showsIndicators: false) {
+                    LazyVStack(spacing: 8) {
+                        ForEach(range.map { $0 }, id: \.self) { number in
+                            Text("\(number)")
+                                .font(.system(size: number == selectedNumber ? 36 : 24))
+                                .fontWeight(number == selectedNumber ? .bold : .regular)
+                                .foregroundColor(number == selectedNumber ? Theme.textPrimary : Theme.textSecondary.opacity(0.5))
+                                .frame(height: 44)
+                                .id(number)
+                                .onTapGesture {
+                                    withAnimation {
+                                        selectedNumber = number
+                                        proxy.scrollTo(number, anchor: .center)
+                                    }
+                                }
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .frame(height: 220)
+                .mask(
+                    LinearGradient(
+                        gradient: Gradient(
+                            stops: [
+                                .init(color: .clear, location: 0),
+                                .init(color: .black, location: 0.1),
+                                .init(color: .black, location: 0.9),
+                                .init(color: .clear, location: 1)
+                            ]
+                        ),
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .overlay(
+                    Rectangle()
+                        .fill(Theme.accent.opacity(0.1))
+                        .frame(height: 44)
+                )
+                .onChange(of: selectedNumber) { newValue in
+                    withAnimation {
+                        proxy.scrollTo(newValue, anchor: .center)
+                    }
+                }
+                .onAppear {
+                    proxy.scrollTo(selectedNumber, anchor: .center)
+                }
+            }
         }
         .padding(.horizontal)
     }
