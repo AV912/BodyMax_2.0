@@ -134,6 +134,11 @@ struct PhotoSelectionView: View {
             .sheet(isPresented: $viewModel.showingPhotoPicker) {
                 PhotoPickerView(viewModel: viewModel)
             }
+            .alert("Error", isPresented: $viewModel.analysisViewModel.showingError) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(viewModel.analysisViewModel.errorMessage)
+            }
         }
     }
 }

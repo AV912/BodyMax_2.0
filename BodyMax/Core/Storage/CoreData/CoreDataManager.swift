@@ -22,7 +22,8 @@ class CoreDataManager {
     func saveUserProfile(_ profile: UserProfile) {
         let request = NSFetchRequest<CDUserProfile>(entityName: "CDUserProfile")
         do {
-            let existingProfiles = try context.fetch(request)
+            // Be explicit about the type here
+            let existingProfiles: [CDUserProfile] = try context.fetch(request)
             for existingProfile in existingProfiles {
                 context.delete(existingProfile)
             }
@@ -47,7 +48,7 @@ class CoreDataManager {
     func fetchUserProfile() -> UserProfile? {
         let request = NSFetchRequest<CDUserProfile>(entityName: "CDUserProfile")
         do {
-            let profiles = try context.fetch(request)
+            let profiles: [CDUserProfile] = try context.fetch(request)
             guard let cdProfile = profiles.first else { return nil }
             
             return UserProfile(
@@ -68,6 +69,7 @@ class CoreDataManager {
     }
 
     func saveAnalysis(_ analysis: Analysis) {
+        print("CoreDataManager - Attempting to save new analysis...")
         let cdAnalysis = CDAnalysis(context: context)
         
         do {
@@ -79,24 +81,36 @@ class CoreDataManager {
             cdAnalysis.progressScore = analysis.progressScore
             cdAnalysis.dateGenerated = analysis.dateGenerated
             
+            print("CoreDataManager - Saving analysis with date: \(analysis.dateGenerated)")
             try context.save()
+            print("CoreDataManager - Successfully saved to CoreData")
         } catch {
-            print("Error saving analysis: \(error)")
+            print("CoreDataManager - Error saving analysis: \(error)")
         }
     }
 
     func fetchAnalyses() -> [Analysis] {
+        print("CoreDataManager - Starting to fetch analyses...")
         let request = NSFetchRequest<CDAnalysis>(entityName: "CDAnalysis")
         request.sortDescriptors = [NSSortDescriptor(key: "dateGenerated", ascending: false)]
         
         do {
             let cdAnalyses = try context.fetch(request)
-            return try cdAnalyses.compactMap { cdAnalysis in
-                guard let bodyPartBreakdown = try? JSONDecoder().decode(BodyPartBreakdown.self, from: cdAnalysis.bodyPartBreakdownData ?? Data()),
-                      let workoutRoutine = try? JSONDecoder().decode(WorkoutRoutine.self, from: cdAnalysis.workoutRoutineData ?? Data()),
-                      let nutritionPlan = try? JSONDecoder().decode(NutritionPlan.self, from: cdAnalysis.nutritionPlanData ?? Data()),
-                      let transformationProjection = try? JSONDecoder().decode(TransformationProjection.self, from: cdAnalysis.transformationProjectionData ?? Data()),
-                      let dreamPhysiqueData = cdAnalysis.dreamPhysiqueData else {
+            print("CoreDataManager - Found \(cdAnalyses.count) analyses in CoreData")
+            
+            let analyses: [Analysis] = cdAnalyses.compactMap { cdAnalysis in
+                // Explicitly handle potential decoding errors
+                guard 
+                    let bodyPartBreakdownData = cdAnalysis.bodyPartBreakdownData,
+                    let workoutRoutineData = cdAnalysis.workoutRoutineData,
+                    let nutritionPlanData = cdAnalysis.nutritionPlanData,
+                    let transformationProjectionData = cdAnalysis.transformationProjectionData,
+                    let bodyPartBreakdown = try? JSONDecoder().decode(BodyPartBreakdown.self, from: bodyPartBreakdownData),
+                    let workoutRoutine = try? JSONDecoder().decode(WorkoutRoutine.self, from: workoutRoutineData),
+                    let nutritionPlan = try? JSONDecoder().decode(NutritionPlan.self, from: nutritionPlanData),
+                    let transformationProjection = try? JSONDecoder().decode(TransformationProjection.self, from: transformationProjectionData)
+                else {
+                    print("CoreDataManager - Failed to decode analysis data")
                     return nil
                 }
                 
@@ -106,12 +120,15 @@ class CoreDataManager {
                     workoutRoutine: workoutRoutine,
                     nutritionPlan: nutritionPlan,
                     transformationProjection: transformationProjection,
-                    dreamPhysiqueData: dreamPhysiqueData,
+                    dreamPhysiqueData: cdAnalysis.dreamPhysiqueData,
                     dateGenerated: cdAnalysis.dateGenerated ?? Date()
                 )
             }
+            
+            print("CoreDataManager - Successfully mapped \(analyses.count) analyses")
+            return analyses
         } catch {
-            print("Error fetching analyses: \(error)")
+            print("CoreDataManager - Error fetching analyses: \(error)")
             return []
         }
     }
@@ -119,7 +136,7 @@ class CoreDataManager {
     func saveDreamPhysique(_ image: UIImage) {
         let request = NSFetchRequest<CDDreamPhysique>(entityName: "CDDreamPhysique")
         do {
-            let existingImages = try context.fetch(request)
+            let existingImages: [CDDreamPhysique] = try context.fetch(request)
             for image in existingImages {
                 context.delete(image)
             }
@@ -137,7 +154,7 @@ class CoreDataManager {
     func fetchDreamPhysique() -> UIImage? {
         let request = NSFetchRequest<CDDreamPhysique>(entityName: "CDDreamPhysique")
         do {
-            let images = try context.fetch(request)
+            let images: [CDDreamPhysique] = try context.fetch(request)
             guard let cdDreamPhysique = images.first,
                   let imageData = cdDreamPhysique.imageData else {
                 return nil
@@ -152,7 +169,7 @@ class CoreDataManager {
     func clearDreamPhysique() {
         let request = NSFetchRequest<CDDreamPhysique>(entityName: "CDDreamPhysique")
         do {
-            let images = try context.fetch(request)
+            let images: [CDDreamPhysique] = try context.fetch(request)
             for image in images {
                 context.delete(image)
             }

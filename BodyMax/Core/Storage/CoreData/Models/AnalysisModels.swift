@@ -23,14 +23,15 @@ struct MuscleGroupAssessment: Codable {
 
 struct WorkoutRoutine: Codable {
     let cycle: WorkoutCycle
-    let weekDuration: Int
-    let exercises: [WorkoutDay]
+    let cycleDuration: Int  // Changed from weekDuration
+    let exercises: [WorkoutDay]  // Array of workout days including rest days
     let progressionTips: String
 }
 
 struct WorkoutDay: Codable {
     let type: WorkoutType
-    let exercises: [Exercise]
+    let exercises: [Exercise]  // Empty array for rest days
+    let dayInCycle: Int       // 1-based index in the cycle
 }
 
 struct Exercise: Codable {
@@ -84,4 +85,5 @@ enum WorkoutType: String, Codable {
     case lower
     case fullBody
     case custom
+    case rest
 }

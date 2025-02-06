@@ -10,6 +10,10 @@ class AnalysisViewModel: ObservableObject {
     @Published var analyses: [Analysis] = []
     @Published var selectedAnalysis: Analysis?
     
+    // Error handling
+    @Published var showingError = false
+    @Published var errorMessage = ""
+    
     init() {
         self.dreamPhysique = CoreDataManager.shared.fetchDreamPhysique()
         loadAnalyses()
@@ -26,8 +30,13 @@ class AnalysisViewModel: ObservableObject {
     }
     
     func loadAnalyses() {
+        print("Loading analyses from CoreData...")
         analyses = CoreDataManager.shared.fetchAnalyses()
+        print("Loaded \(analyses.count) analyses")
         selectedAnalysis = analyses.first
+        if let first = analyses.first {
+            print("Most recent analysis date: \(first.dateGenerated)")
+        }
     }
     
     func startNewAnalysis() {
@@ -37,86 +46,43 @@ class AnalysisViewModel: ObservableObject {
     func performAnalysis(with photos: [PhotoType: UIImage]) {
         print("Starting analysis with photos: \(photos)")
         showingLoadingView = true
+        errorMessage = ""
+        showingError = false
         
-        let mockAnalysis = generateMockAnalysis()
-        CoreDataManager.shared.saveAnalysis(mockAnalysis)
-        selectedAnalysis = mockAnalysis
+        // Get current dream physique data
+        let currentDreamPhysiqueData = dreamPhysique?.jpegData(compressionQuality: 0.8)
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            self.showingLoadingView = false
-            self.loadAnalyses()
-            self.showingAnalysisResult = true
+        Task {
+            do {
+                print("Getting analysis from API...")
+                var analysis = try await APIClient.shared.analyze(
+                    photos: photos,
+                    dreamPhysique: dreamPhysique ?? UIImage(),
+                    userProfile: UserState.shared.userProfile ?? UserProfile()
+                )
+                
+                // Add dream physique data to analysis before saving
+                analysis.dreamPhysiqueData = currentDreamPhysiqueData
+                
+                print("Saving analysis to CoreData...")
+                CoreDataManager.shared.saveAnalysis(analysis)
+                
+                await MainActor.run {
+                    print("Updating UI with new analysis...")
+                    self.showingLoadingView = false
+                    self.selectedAnalysis = analysis
+                    self.loadAnalyses()
+                    self.showingAnalysisResult = true
+                    print("Analysis flow completed")
+                }
+            } catch {
+                print("Error performing analysis:", error)
+                await MainActor.run {
+                    self.showingLoadingView = false
+                    self.errorMessage = error.localizedDescription
+                    self.showingError = true
+                }
+            }
         }
-    }
-    
-    func generateMockAnalysis() -> Analysis {
-        let muscleGroup = MuscleGroupAssessment(
-            name: "Chest",
-            currentCondition: "Well developed upper chest",
-            improvementNotes: "Focus on lower chest development"
-        )
-        
-        let bodyPartBreakdown = BodyPartBreakdown(
-            muscleGroups: [muscleGroup],
-            overallAssessment: "Good overall development"
-        )
-        
-        let exercise = Exercise(
-            name: "Bench Press",
-            sets: 4,
-            reps: "8-12",
-            progressionMethod: "Add 5lbs when all sets completed"
-        )
-        
-        let workoutDay = WorkoutDay(
-            type: .push,
-            exercises: [exercise]
-        )
-        
-        let workoutRoutine = WorkoutRoutine(
-            cycle: .pushPullLegs,
-            weekDuration: 1,
-            exercises: [workoutDay],
-            progressionTips: "Focus on progressive overload"
-        )
-        
-        let macros = Macros(
-            protein: 180,
-            carbs: 220,
-            fat: 60,
-            calories: 2500
-        )
-        
-        let meal = Meal(
-            name: "Breakfast",
-            description: "Oatmeal with protein",
-            macroBreakdown: macros
-        )
-        
-        let mealPlan = MealPlan(
-            name: "Standard Plan",
-            meals: [meal]
-        )
-        
-        let nutritionPlan = NutritionPlan(
-            dailyMacros: macros,
-            dietaryPreferences: ["High Protein"],
-            sampleMealPlans: [mealPlan]
-        )
-        
-        let transformationProjection = TransformationProjection(
-            generatedImageURL: "",
-            projectionDetails: "Expected transformation in 12 weeks"
-        )
-        
-        return Analysis(
-            bodyPartBreakdown: bodyPartBreakdown,
-            progressScore: 75.0,
-            workoutRoutine: workoutRoutine,
-            nutritionPlan: nutritionPlan,
-            transformationProjection: transformationProjection,
-            dreamPhysiqueData: dreamPhysique?.jpegData(compressionQuality: 0.8),
-            dateGenerated: Date()
-        )
     }
 }
