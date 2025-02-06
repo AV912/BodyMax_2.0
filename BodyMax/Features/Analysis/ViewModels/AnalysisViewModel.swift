@@ -55,14 +55,22 @@ class AnalysisViewModel: ObservableObject {
         Task {
             do {
                 print("Getting analysis from API...")
-                var analysis = try await APIClient.shared.analyze(
+                let apiAnalysis = try await APIClient.shared.analyze(
                     photos: photos,
                     dreamPhysique: dreamPhysique ?? UIImage(),
                     userProfile: UserState.shared.userProfile ?? UserProfile()
                 )
                 
-                // Add dream physique data to analysis before saving
-                analysis.dreamPhysiqueData = currentDreamPhysiqueData
+                // Create new Analysis with dream physique data
+                let analysis = Analysis(
+                    bodyPartBreakdown: apiAnalysis.bodyPartBreakdown,
+                    progressScore: apiAnalysis.progressScore,
+                    workoutRoutine: apiAnalysis.workoutRoutine,
+                    nutritionPlan: apiAnalysis.nutritionPlan,
+                    transformationProjection: apiAnalysis.transformationProjection,
+                    dreamPhysiqueData: currentDreamPhysiqueData,
+                    dateGenerated: apiAnalysis.dateGenerated
+                )
                 
                 print("Saving analysis to CoreData...")
                 CoreDataManager.shared.saveAnalysis(analysis)

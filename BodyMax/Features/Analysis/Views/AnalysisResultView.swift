@@ -1,82 +1,25 @@
 import SwiftUI
 
-// Add mock extension
-extension Analysis {
-    static var mock: Analysis {
-        let muscleGroup = MuscleGroupAssessment(
-            name: "Chest",
-            currentCondition: "Well developed upper chest",
-            improvementNotes: "Focus on lower chest development"
-        )
-        
-        let bodyPartBreakdown = BodyPartBreakdown(
-            muscleGroups: [muscleGroup],
-            overallAssessment: "Good overall development"
-        )
-        
-        let exercise = Exercise(
-            name: "Bench Press",
-            sets: 4,
-            reps: "8-12",
-            progressionMethod: "Add 5lbs when all sets completed"
-        )
-        
-        let workoutDay = WorkoutDay(
-            type: .push,
-            exercises: [exercise]
-        )
-        
-        let workoutRoutine = WorkoutRoutine(
-            cycle: .pushPullLegs,
-            weekDuration: 1,
-            exercises: [workoutDay],
-            progressionTips: "Focus on progressive overload"
-        )
-        
-        let macros = Macros(
-            protein: 180,
-            carbs: 220,
-            fat: 60,
-            calories: 2500
-        )
-        
-        let meal = Meal(
-            name: "Breakfast",
-            description: "Oatmeal with protein",
-            macroBreakdown: macros
-        )
-        
-        let mealPlan = MealPlan(
-            name: "Standard Plan",
-            meals: [meal]
-        )
-        
-        let nutritionPlan = NutritionPlan(
-            dailyMacros: macros,
-            dietaryPreferences: ["High Protein"],
-            sampleMealPlans: [mealPlan]
-        )
-        
-        let transformationProjection = TransformationProjection(
-            generatedImageURL: "",
-            projectionDetails: "Expected transformation in 12 weeks"
-        )
-        
-        return Analysis(
-            bodyPartBreakdown: bodyPartBreakdown,
-            progressScore: 75.0,
-            workoutRoutine: workoutRoutine,
-            nutritionPlan: nutritionPlan,
-            transformationProjection: transformationProjection,
-            dreamPhysiqueData: nil,
-            dateGenerated: Date()
-        )
-    }
-}
-
 struct AnalysisResultView: View {
     let analysis: Analysis
     @Environment(\.dismiss) private var dismiss
+    
+    private func formatDayNumber(_ day: Int) -> String {
+        switch day {
+        case 1: return "Day 1"
+        case 2: return "Day 2"
+        case 3: return "Day 3"
+        case 4: return "Day 4"
+        case 5: return "Day 5"
+        case 6: return "Day 6"
+        case 7: return "Day 7"
+        default: return "Day \(day)"
+        }
+    }
+    
+    private var orderedWorkoutDays: [WorkoutDay] {
+        analysis.workoutRoutine.exercises.sorted(by: { $0.dayInCycle < $1.dayInCycle })
+    }
     
     var body: some View {
         NavigationView {
@@ -139,19 +82,35 @@ struct AnalysisResultView: View {
                                 .font(.headline)
                                 .foregroundColor(Theme.textPrimary)
                             
-                            Text("Cycle: \(analysis.workoutRoutine.cycle.rawValue)")
-                                .foregroundColor(Theme.textSecondary)
+                            HStack {
+                                Text("Cycle: \(analysis.workoutRoutine.cycle.rawValue)")
+                                    .foregroundColor(Theme.textSecondary)
+                                Spacer()
+                                Text("Repeats \(analysis.workoutRoutine.cycleDuration)x")
+                                    .foregroundColor(Theme.accent)
+                            }
                             
-                            ForEach(analysis.workoutRoutine.exercises, id: \.type.rawValue) { day in
+                            ForEach(orderedWorkoutDays, id: \.dayInCycle) { day in
                                 VStack(alignment: .leading, spacing: 8) {
-                                    Text(day.type.rawValue)
-                                        .font(.subheadline)
-                                        .foregroundColor(Theme.textPrimary)
-                                    
-                                    ForEach(day.exercises, id: \.name) { exercise in
-                                        Text("\(exercise.name): \(exercise.sets) sets × \(exercise.reps)")
-                                            .font(.caption)
+                                    HStack {
+                                        Text(formatDayNumber(day.dayInCycle))
+                                            .font(.headline)
+                                            .foregroundColor(Theme.accent)
+                                        
+                                        Text("-")
                                             .foregroundColor(Theme.textSecondary)
+                                        
+                                        Text(day.type.rawValue.capitalized)
+                                            .font(.subheadline)
+                                            .foregroundColor(Theme.textPrimary)
+                                    }
+                                    
+                                    if day.type != .rest {
+                                        ForEach(day.exercises, id: \.name) { exercise in
+                                            Text("\(exercise.name): \(exercise.sets) sets × \(exercise.reps)")
+                                                .font(.caption)
+                                                .foregroundColor(Theme.textSecondary)
+                                        }
                                     }
                                 }
                                 .padding()
@@ -309,8 +268,4 @@ struct MacroItem: View {
                 .foregroundColor(Theme.textPrimary)
         }
     }
-}
-
-#Preview {
-    AnalysisResultView(analysis: .mock)
 }
